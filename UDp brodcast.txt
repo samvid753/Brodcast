@@ -1,0 +1,50 @@
+
+UDP broadcast client
+
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#define PORT 9876  // Port to send broadcast messages
+#define BROADCAST_ADDR "255.255.255.255" // Broadcast address
+
+int main() {
+    int sockfd;
+    struct sockaddr_in server_addr;
+
+    // Create a UDP socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        perror("socket");
+        return 1;
+    }
+
+    // Configure the server address
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    server_addr.sin_addr.s_addr = inet_addr(BROADCAST_ADDR);
+
+    // Enable broadcast
+    int broadcast_enable = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) == -1) {
+        perror("setsockopt");
+        return 1;
+    }
+
+    char message[] = "This is a broadcast message!";
+    int len = strlen(message);
+
+    // Send the broadcast message
+    if (sendto(sockfd, message, len, 0, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        perror("sendto");
+        return 1;
+    }
+
+    printf("Broadcast message sent: %s\n", message);
+
+    close(sockfd);
+    return 0;
+}
